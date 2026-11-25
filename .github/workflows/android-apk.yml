@@ -1,1 +1,3 @@
-Verification: Les dernières lignes pointent bien vers android/app/build/outputs/apk/release/app-release.apk.
+Sélectionnez tout le contenu, supprimez-le et collez uniquement ce bloc YAML (en veillant à ne copier aucune ligne de texte avant name: ni après app-release.apk) :
+•
+Verification: La ligne 1 commence bien par name: Build Android APK et la dernière ligne se termine par app-release.apk.
