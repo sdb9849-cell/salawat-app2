@@ -1,3 +1,55 @@
-Sélectionnez tout le contenu, supprimez-le et collez uniquement ce bloc YAML (en veillant à ne copier aucune ligne de texte avant name: ni après app-release.apk) :
-•
-Verification: La ligne 1 commence bien par name: Build Android APK et la dernière ligne se termine par app-release.apk.
+name: Build Android APK
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build-apk:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Extraire le fichier ZIP du projet
+        run: |
+          unzip -o "*.zip"
+          if [ ! -f package.json ]; then
+            SUBDIR=$(find . -maxdepth 2 -name "package.json" -printf "%h\n" | head -n 1)
+            if [ -n "$SUBDIR" ] && [ "$SUBDIR" != "." ]; then
+              cp -rf "$SUBDIR"/* .
+            fi
+          fi
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Expo Prebuild Android
+        run: npx expo prebuild --platform android --non-interactive
+
+      - name: Générer clé de signature et compiler APK Release
+        run: |
+          keytool -genkey -v -keystore android/app/release.keystore -alias salawat -keyalg RSA -keysize 2048 -validity 10000 -storepass android -keypass android -dname "CN=Salawat, OU=Dev, O=Salawat, L=Paris, S=IDF, C=FR"
+          printf "\nMYAPP_UPLOAD_STORE_FILE=release.keystore\nMYAPP_UPLOAD_KEY_ALIAS=salawat\nMYAPP_UPLOAD_STORE_PASSWORD=android\nMYAPP_UPLOAD_KEY_PASSWORD=android\n" >> android/gradle.properties
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleRelease -Pandroid.injected.signing.store.file=$PWD/app/release.keystore -Pandroid.injected.signing.store.password=android -Pandroid.injected.signing.key.alias=salawat -Pandroid.injected.signing.key.password=android
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: salawat-android-apk
+          path: android/app/build/outputs/apk/release/app-release.apk
