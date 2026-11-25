@@ -6,8 +6,7 @@ on:
 jobs:
   build-apk:
     runs-on: ubuntu-latest
-    
-Vérification : Il ne reste aucune ligne version: sous uses: pnpm/action-setup@v4.
+    steps:
       - name: Checkout
         uses: actions/checkout@v4
 
@@ -23,8 +22,6 @@ Vérification : Il ne reste aucune ligne version: sous uses: pnpm/action-setup@v
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
-        with:
-          version: 9
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
